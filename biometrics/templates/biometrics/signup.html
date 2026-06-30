@@ -1,0 +1,38 @@
+{% extends "biometrics/base.html" %}
+{% block title %}Créer un compte{% endblock %}
+{% block content %}
+<div class="card" style="max-width:380px;margin:60px auto;">
+    <h2>Créer un compte</h2>
+    <p style="color:#9aa0c3;font-size:13px;">
+        Après l'inscription, l'enrôlement biométrique (visage puis voix) sera demandé
+        et est obligatoire pour accéder à l'application.
+    </p>
+    {% if form.errors %}
+        <ul style="color:#ff8a8a;font-size:13px;">
+            {% for field in form %}
+                {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="field">
+            <label>Nom d'utilisateur</label>
+            <input type="text" name="username" autofocus required>
+        </div>
+        <div class="field">
+            <label>Mot de passe</label>
+            <input type="password" name="password1" required>
+        </div>
+        <div class="field">
+            <label>Confirmez le mot de passe</label>
+            <input type="password" name="password2" required>
+        </div>
+        <button type="submit">Créer mon compte</button>
+    </form>
+    <p style="text-align:center;margin-top:16px;font-size:13px;color:#9aa0c3;">
+        Déjà un compte ? <a href="{% url 'login' %}" style="color:#4f6ef7;">Se connecter</a>
+    </p>
+</div>
+{% endblock %}

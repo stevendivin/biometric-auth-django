@@ -1,0 +1,48 @@
+{% extends "biometrics/base.html" %}
+{% load static %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <h2>👤 Visage</h2>
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+            <div>
+                <button id="btnStartCam">Activer la caméra</button>
+                <button id="btnEnrollFace" disabled>Enrôler mon visage</button>
+                <button id="btnVerifyFace" disabled>Vérifier (challenge live)</button>
+            </div>
+            <label class="consent">
+                <input type="checkbox" id="faceConsent"> Je consens à l'enrôlement de mon visage (RGPD art. 9)
+            </label>
+            <div id="faceGesture" class="gesture"></div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card">
+            <h2>🎙️ Voix</h2>
+            <p style="color:#9aa0c3;font-size:13px;">Enregistrement ~4 secondes via le micro.</p>
+            <div>
+                <button id="btnEnrollVoice">Enrôler ma voix</button>
+                <button id="btnVerifyVoice">Vérifier (challenge live)</button>
+            </div>
+            <label class="consent">
+                <input type="checkbox" id="voiceConsent"> Je consens à l'enrôlement de ma voix (RGPD art. 9)
+            </label>
+            <div id="voiceChallenge" class="gesture"></div>
+            <div id="recIndicator" style="color:#ff8a8a;font-size:13px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📋 Journal</h2>
+    <div id="log" class="log">Prêt.</div>
+</div>
+
+{{ user.username|json_script:"current-username" }}
+<script src="{% static 'biometrics/app.js' %}"></script>
+{% endblock %}

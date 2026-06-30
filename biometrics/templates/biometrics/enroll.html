@@ -1,0 +1,75 @@
+{% extends "biometrics/base.html" %}
+{% load static %}
+{% block title %}Enrôlement biométrique{% endblock %}
+{% block content %}
+
+<div class="card">
+    <h2>🔐 Enrôlement biométrique obligatoire</h2>
+    <div class="stepper">
+        <span class="step active" id="step-consent">1. Consentement</span>
+        <span class="step" id="step-face">2. Visage</span>
+        <span class="step" id="step-voice">3. Voix</span>
+    </div>
+
+    <!-- Phase 1 : consentement -->
+    <div id="phase-consent">
+        <p class="helper-text">
+            Pour sécuriser ton compte avec une authentification visage + voix, nous avons besoin
+            d'enregistrer une empreinte biométrique. Concrètement : aucune image ni aucun audio
+            brut n'est jamais conservé, seuls des vecteurs mathématiques (embeddings) chiffrés
+            sont stockés, et tu peux demander leur suppression à tout moment.
+        </p>
+        <label class="consent">
+            <input type="checkbox" id="globalConsent">
+            Je consens à l'enrôlement de mon visage et de ma voix pour l'authentification biométrique (RGPD art. 9).
+        </label>
+        <button id="btnStartEnroll" disabled>Commencer l'enrôlement</button>
+    </div>
+
+    <!-- Phase 2 : visage (séquence de gestes) -->
+    <div id="phase-face" style="display:none;">
+        <p class="helper-text">
+            Place ton visage bien visible face à la caméra. Une séquence de 5 gestes va te être
+            demandée, un par un. Effectue chaque geste uniquement quand il s'affiche.
+        </p>
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+        <div>
+            <button id="btnStartCam">Activer la caméra</button>
+        </div>
+        <div id="faceProgress" class="gesture-progress"></div>
+        <div id="faceInstruction" class="gesture"></div>
+        <div id="faceCountdown" class="countdown"></div>
+        <button id="btnStartGesture" disabled>Je suis prêt</button>
+    </div>
+
+    <!-- Phase 3 : voix (5 chiffres un par un) -->
+    <div id="phase-voice" style="display:none;">
+        <p class="helper-text">
+            Le micro va être activé. 5 chiffres vont s'afficher un par un : prononce chaque
+            chiffre clairement quand il apparaît, après le compte à rebours.
+        </p>
+        <div>
+            <button id="btnStartMic">Activer le micro</button>
+        </div>
+        <div id="digitProgress" class="gesture-progress"></div>
+        <div id="digitDisplay" class="digit-display"></div>
+        <div id="voiceCountdown" class="countdown"></div>
+        <button id="btnStartDigit" disabled>Je suis prêt</button>
+        <div id="recIndicator" style="color:#ff8a8a;font-size:13px;"></div>
+    </div>
+
+    <!-- Phase 4 : terminé -->
+    <div id="phase-done" style="display:none;">
+        <h2>✅ Enrôlement terminé</h2>
+        <p class="helper-text">Redirection vers ton tableau de bord...</p>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📋 Journal</h2>
+    <div id="log" class="log">Prêt.</div>
+</div>
+
+<script src="{% static 'biometrics/enroll.js' %}"></script>
+{% endblock %}

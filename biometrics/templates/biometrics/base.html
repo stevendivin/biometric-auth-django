@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Auth biométrique{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #0f1117;
+            color: #e6e6e6;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #161925;
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #262a3a;
+        }
+        header a { color: #e6e6e6; text-decoration: none; }
+        header .brand { font-weight: 600; }
+        main { max-width: 960px; margin: 0 auto; padding: 24px; }
+        .card {
+            background: #161925;
+            border: 1px solid #262a3a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h2 { margin-top: 0; font-size: 17px; }
+        button {
+            background: #4f6ef7;
+            color: white;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        button:hover { background: #3d5be0; }
+        button:disabled { background: #3a3d4a; cursor: not-allowed; }
+        video, canvas { border-radius: 8px; background: #000; max-width: 100%; }
+        video { width: 320px; height: 240px; }
+        .row { display: flex; gap: 24px; flex-wrap: wrap; }
+        .col { flex: 1; min-width: 280px; }
+        .log {
+            background: #0b0d14;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: ui-monospace, monospace;
+            font-size: 12.5px;
+            max-height: 260px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .badge { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .ok { background: #1f3d2b; color: #6fe89a; }
+        .ko { background: #3d1f1f; color: #ff8a8a; }
+        .gesture {
+            font-size: 22px;
+            font-weight: 700;
+            color: #4f6ef7;
+            margin: 10px 0;
+        }
+        label.consent { display: block; font-size: 13px; margin: 10px 0; color: #b4b6c2; }
+        input[type="checkbox"] { margin-right: 6px; }
+        .field { margin-bottom: 12px; }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 9px;
+            border-radius: 6px;
+            border: 1px solid #262a3a;
+            background: #0b0d14;
+            color: #e6e6e6;
+        }
+        .stepper {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .step {
+            font-size: 12.5px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            background: #1d2030;
+            color: #777b95;
+            border: 1px solid #262a3a;
+        }
+        .step.active { background: #20264a; color: #8fa0ff; border-color: #4f6ef7; }
+        .step.done { background: #1f3d2b; color: #6fe89a; border-color: #2c5a3f; }
+        .countdown {
+            font-size: 40px;
+            font-weight: 700;
+            color: #ffb14f;
+            text-align: center;
+            min-height: 50px;
+        }
+        .digit-display {
+            font-size: 56px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: #4f6ef7;
+            text-align: center;
+            margin: 14px 0;
+        }
+        .gesture-progress {
+            font-size: 13px;
+            color: #9aa0c3;
+            margin-bottom: 6px;
+        }
+        .helper-text { color: #9aa0c3; font-size: 13px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <header>
+        <a class="brand" href="{% url 'dashboard' %}">🔐 Auth biométrique</a>
+        {% if user.is_authenticated %}
+            <span>{{ user.username }} ·
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="background:none;border:none;color:#9aa0c3;padding:0;font-size:14px;cursor:pointer;">déconnexion</button>
+                </form>
+            </span>
+        {% endif %}
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
