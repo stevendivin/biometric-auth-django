@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+.env
+.venv/
+venv/
+env/
+media/
+staticfiles/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.pt
+*.h5
+deepface_weights/

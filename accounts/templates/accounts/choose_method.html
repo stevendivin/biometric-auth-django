@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Méthode d'authentification{% endblock %}
+{% block content %}
+<h1>Comment voulez-vous vous authentifier ?</h1>
+<form method="post">
+    {% csrf_token %}
+    {% for method in methods %}
+        <label>
+            <input type="radio" name="method" value="{{ method }}" required>
+            {% if method == "face" %}Reconnaissance faciale
+            {% elif method == "voice" %}Reconnaissance vocale
+            {% else %}Code par email (OTP){% endif %}
+        </label><br>
+    {% endfor %}
+    <button type="submit">Continuer</button>
+</form>
+{% endblock %}

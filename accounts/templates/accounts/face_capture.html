@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Vérification faciale{% endblock %}
+{% block content %}
+<h1>Regardez la caméra</h1>
+<video id="video" width="320" height="240" autoplay muted></video>
+<p id="liveness-instruction">Clignez des yeux pour continuer…</p>
+<button type="button" id="capture-face-btn">Vérifier</button>
+<p id="face-status"></p>
+
+<script>window.FACE_VERIFY_MODE = true; window.FACE_VERIFY_URL = "{% url 'accounts:face_verify' %}";</script>
+<script src="{% static 'accounts/js/face-capture.js' %}"></script>
+{% endblock %}

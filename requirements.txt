@@ -1,0 +1,27 @@
+# --- Core web framework ---
+Django==5.0.6
+djangorestframework==3.15.1
+python-dotenv==1.0.1
+gunicorn==22.0.0
+
+# --- Database (Supabase = Postgres + pgvector, hosted, no local install needed) ---
+psycopg2-binary==2.9.9
+django-pgvector==0.1.0  # not required if you interact with vectors via SQL directly, kept optional
+
+# --- Face biometrics ---
+deepface==0.0.92          # ArcFace embeddings, no dlib/CMake compilation required
+mediapipe==0.10.14        # liveness landmarks (blink / head-turn challenge, client + server)
+opencv-python-headless==4.10.0.84
+
+# --- Voice biometrics ---
+speechbrain==1.0.0        # ECAPA-TDNN speaker embeddings
+torch==2.3.1
+torchaudio==2.3.1
+soundfile==0.12.1
+pydub==0.25.1             # audio format conversion (webm/opus -> wav)
+
+# --- Security / misc ---
+django-recaptcha==4.0.0
+numpy==1.26.4
+scipy==1.13.1
+requests==2.32.3

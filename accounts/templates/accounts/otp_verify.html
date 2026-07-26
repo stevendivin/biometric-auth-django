@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Code de vérification{% endblock %}
+{% block content %}
+<h1>Entrez le code reçu par email</h1>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="code" maxlength="6" required autofocus>
+    <button type="submit">Valider</button>
+</form>
+<a href="{% url 'accounts:resend_otp' %}">Renvoyer le code</a>
+{% endblock %}

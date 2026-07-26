@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Vérification vocale{% endblock %}
+{% block content %}
+<h1>Prononcez le mot affiché</h1>
+<p>Mot à dire : <strong id="current-word">{{ word }}</strong></p>
+<button type="button" id="record-btn">🎙️ Enregistrer</button>
+<p id="voice-status"></p>
+
+<script>window.VOICE_VERIFY_MODE = true; window.VOICE_VERIFY_URL = "{% url 'accounts:voice_verify' %}";</script>
+<script src="{% static 'accounts/js/voice-capture.js' %}"></script>
+{% endblock %}

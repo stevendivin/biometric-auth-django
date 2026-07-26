@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Inscription{% endblock %}
+{% block content %}
+<h1>Créer un compte</h1>
+<form method="post" id="register-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <fieldset id="face-enroll-section" style="display:none">
+        <legend>Enrôlement facial</legend>
+        <video id="video" width="320" height="240" autoplay muted></video>
+        <button type="button" id="capture-face-btn">Capturer mon visage</button>
+        <input type="hidden" name="face_image_data" id="face_image_data">
+        <p id="face-status"></p>
+    </fieldset>
+
+    <fieldset id="voice-enroll-section" style="display:none">
+        <legend>Enrôlement vocal — prononcez chaque mot affiché</legend>
+        <p>Mot actuel : <strong id="current-word">{{ voice_words.0 }}</strong></p>
+        <button type="button" id="record-btn">🎙️ Enregistrer</button>
+        <p id="voice-status">0/3 mots enregistrés</p>
+    </fieldset>
+
+    <button type="submit">Créer le compte</button>
+</form>
+
+<script>
+  window.VOICE_WORDS = {{ voice_words|safe }};
+  window.ENROLL_VOICE_URL = "{% url 'accounts:enroll_voice_word' %}";
+</script>
+<script src="{% static 'accounts/js/face-capture.js' %}"></script>
+<script src="{% static 'accounts/js/voice-capture.js' %}"></script>
+<script>
+  // Show the relevant enrollment section based on which checkboxes are ticked
+  document.querySelectorAll('input[name="biometric_methods"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      document.getElementById('face-enroll-section').style.display =
+        document.querySelector('input[value="face"]:checked') ? 'block' : 'none';
+      document.getElementById('voice-enroll-section').style.display =
+        document.querySelector('input[value="voice"]:checked') ? 'block' : 'none';
+    });
+  });
+</script>
+{% endblock %}
