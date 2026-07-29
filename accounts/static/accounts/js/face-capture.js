@@ -1,52 +1,92 @@
-// Handles webcam access + a snapshot capture, used both at enrollment
-// (register.html) and at verification time (face_capture.html).
-// The blink-liveness challenge itself runs via MediaPipe Face Landmarker,
-// loaded from a CDN so the project needs no local model download step.
+// static/accounts/js/face-capture.js
 
-(async function () {
-  const video = document.getElementById("video");
-  if (!video) return;
+let stream = null;
+let videoElement = null;
+let canvasElement = null;
+let capturedImageData = null;
 
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  video.srcObject = stream;
+// Initialisation des éléments DOM (appelée une fois le DOM chargé)
+function initFaceCapture() {
+    videoElement = document.getElementById('video');
+    canvasElement = document.createElement('canvas');
+    canvasElement.style.display = 'none';
+    document.body.appendChild(canvasElement);
 
-  function snapshotAsBase64() {
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    return canvas.toDataURL("image/jpeg", 0.9);
-  }
-
-  const captureBtn = document.getElementById("capture-face-btn");
-  if (!captureBtn) return;
-
-  captureBtn.addEventListener("click", async () => {
-    const imageData = snapshotAsBase64();
-    const status = document.getElementById("face-status");
-
-    if (window.FACE_VERIFY_MODE) {
-      status.textContent = "Vérification en cours…";
-      const form = new FormData();
-      form.append("face_image_data", imageData);
-      form.append("csrfmiddlewaretoken", getCsrfToken());
-
-      const res = await fetch(window.FACE_VERIFY_URL, { method: "POST", body: form });
-      const data = await res.json();
-      if (data.match) {
-        status.textContent = "✅ Visage reconnu, connexion…";
-        window.location.href = "/dashboard/";
-      } else {
-        status.textContent = "❌ Visage non reconnu (" + (data.error || "score insuffisant") + ")";
-      }
-    } else {
-      // Enrollment mode: just stash the snapshot for the register form to submit
-      document.getElementById("face_image_data").value = imageData;
-      status.textContent = "✅ Visage capturé";
+    // Le bouton de capture déclenche la prise de vue
+    const captureBtn = document.getElementById('capture-face-btn');
+    if (captureBtn) {
+        captureBtn.addEventListener('click', captureFace);
     }
-  });
+}
 
-  function getCsrfToken() {
-    return document.querySelector("[name=csrfmiddlewaretoken]").value;
-  }
-})();
+// Démarrer la caméra
+function startCamera() {
+    if (stream) {
+        // déjà en cours
+        return;
+    }
+    if (!videoElement) {
+        console.error('Video element not found');
+        return;
+    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+        .then(s => {
+            stream = s;
+            videoElement.srcObject = stream;
+            videoElement.play();
+            document.getElementById('face-status').textContent = 'Caméra active';
+        })
+        .catch(err => {
+            console.error('Erreur d\'accès à la caméra :', err);
+            document.getElementById('face-status').textContent = 'Erreur caméra : ' + err.message;
+        });
+}
+
+// Arrêter la caméra
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    if (videoElement) {
+        videoElement.srcObject = null;
+        videoElement.pause();
+    }
+    // Réinitialiser l'image capturée
+    capturedImageData = null;
+    document.getElementById('face_image_data').value = '';
+    document.getElementById('face-status').textContent = 'Caméra arrêtée';
+}
+
+// Capturer une photo et la stocker en base64
+function captureFace() {
+    if (!videoElement || !stream) {
+        document.getElementById('face-status').textContent = 'Veuillez d\'abord activer la caméra';
+        return;
+    }
+    // Vérifier que la vidéo a une image
+    if (videoElement.readyState < 2) {
+        document.getElementById('face-status').textContent = 'Vidéo pas encore prête, réessayez';
+        return;
+    }
+
+    const canvas = canvasElement;
+    const context = canvas.getContext('2d');
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+    // Convertir en base64 (format PNG)
+    const dataUrl = canvas.toDataURL('image/png');
+    capturedImageData = dataUrl;
+    document.getElementById('face_image_data').value = dataUrl;
+    document.getElementById('face-status').textContent = 'Visage capturé !';
+}
+
+// Initialiser au chargement du DOM
+document.addEventListener('DOMContentLoaded', initFaceCapture);
+
+// Exposer les fonctions globalement pour les utiliser depuis le template
+window.startCamera = startCamera;
+window.stopCamera = stopCamera;
+window.captureFace = captureFace;

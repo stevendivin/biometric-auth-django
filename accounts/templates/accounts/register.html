@@ -1,45 +1,377 @@
-{% extends "base.html" %}
 {% load static %}
-{% block title %}Inscription{% endblock %}
-{% block content %}
-<h1>Créer un compte</h1>
-<form method="post" id="register-form">
-    {% csrf_token %}
-    {{ form.as_p }}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a50c4;
+      --secondary: #7209b7;
+      --success: #4cc9f0;
+      --danger: #e63946;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --light-gray: #e9ecef;
+      --border-radius: 12px;
+      --shadow: 0 8px 30px rgba(0,0,0,0.08);
+      --transition: all 0.3s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #f0f2f5, #e6f7ff);
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 1rem; line-height: 1.6;
+    }
+    .container {
+      background: white; border-radius: var(--border-radius); box-shadow: var(--shadow);
+      width: 100%; max-width: 500px; overflow: hidden; transition: var(--transition);
+    }
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white; padding: 2rem 2rem 1.5rem; text-align: center;
+    }
+    .header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700; }
+    .header p { opacity: 0.9; font-size: 1rem; }
+    .content { padding: 2rem; }
+    h2 { font-size: 1.4rem; color: var(--dark); margin-bottom: 1.5rem; text-align: center; position: relative; }
+    h2::after {
+      content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+      width: 50px; height: 3px; background: var(--primary); border-radius: 2px;
+    }
+    .form-group { margin-bottom: 1.5rem; position: relative; }
+    label { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; color: var(--dark); font-weight: 500; }
+    .form-control {
+      width: 100%; padding: 0.8rem 1rem 0.8rem 3rem; border: 1px solid var(--light-gray);
+      border-radius: 8px; font-size: 1rem; transition: var(--transition); background-color: var(--light);
+    }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2); outline: none; }
+    .input-icon { position: absolute; left: 1rem; top: 2.5rem; color: var(--gray); }
+    .checkboxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .checkbox-card {
+      background: var(--light); border: 1px solid var(--light-gray); border-radius: 8px;
+      padding: 1rem; cursor: pointer; transition: var(--transition);
+    }
+    .checkbox-card:hover { border-color: var(--primary); background-color: rgba(67, 97, 238, 0.05); }
+    .checkbox-card.selected {
+      border-color: var(--primary); background-color: rgba(67, 97, 238, 0.1);
+      box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    }
+    .checkbox-card label { margin-bottom: 0; cursor: pointer; }
+    .biometric-section {
+      background: var(--light); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;
+      border: 1px solid var(--light-gray); transition: var(--transition);
+    }
+    .biometric-section h3 { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: var(--dark); }
+    .media-group { display: flex; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .btn {
+      padding: 0.8rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
+      transition: var(--transition); display: flex; align-items: center; justify-content: center;
+      gap: 0.5rem; font-weight: 600;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3); }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+    .btn-outline:hover { background: rgba(67, 97, 238, 0.1); }
+    #video, #captured-preview, audio { width: 100%; border-radius: 8px; margin-top: 0.5rem; background: var(--dark); }
+    #captured-preview { aspect-ratio: 4/3; object-fit: cover; }
+    .hidden { display: none; }
+    .errorlist { color: var(--danger); margin-top: 0.5rem; font-size: 0.9rem; list-style: none; padding-left: 0; }
+    .errorlist li { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+    .login-link { margin-top: 2rem; text-align: center; color: var(--gray); }
+    .login-link a { color: var(--primary); text-decoration: none; font-weight: 600; transition: var(--transition); }
+    .login-link a:hover { text-decoration: underline; }
+    .progress-container { height: 6px; background: var(--light-gray); border-radius: 3px; overflow: hidden; margin-top: 1rem; }
+    .progress-bar { height: 100%; background: var(--success); width: 0%; transition: width 0.5s ease; }
+    .success-message {
+      background: rgba(76, 201, 240, 0.1); border: 1px solid var(--success); border-radius: 8px;
+      padding: 0.8rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: #0a9396;
+    }
+    @media (max-width: 576px) {
+      .content { padding: 1.5rem; }
+      .header { padding: 1.5rem 1.5rem 1rem; }
+      .checkboxes { grid-template-columns: 1fr; }
+      .media-group { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Création de compte</h1>
+      <p>Inscrivez-vous pour accéder à toutes les fonctionnalités</p>
+    </div>
 
-    <fieldset id="face-enroll-section" style="display:none">
-        <legend>Enrôlement facial</legend>
-        <video id="video" width="320" height="240" autoplay muted></video>
-        <button type="button" id="capture-face-btn">Capturer mon visage</button>
-        <input type="hidden" name="face_image_data" id="face_image_data">
-        <p id="face-status"></p>
-    </fieldset>
+    <div class="content">
+      <form method="post" id="signupForm">
+        {% csrf_token %}
 
-    <fieldset id="voice-enroll-section" style="display:none">
-        <legend>Enrôlement vocal — prononcez chaque mot affiché</legend>
-        <p>Mot actuel : <strong id="current-word">{{ voice_words.0 }}</strong></p>
-        <button type="button" id="record-btn">🎙️ Enregistrer</button>
-        <p id="voice-status">0/3 mots enregistrés</p>
-    </fieldset>
+        <h2><i class="fas fa-user-circle"></i> Informations personnelles</h2>
 
-    <button type="submit">Créer le compte</button>
-</form>
+        {% if messages %}
+          {% for message in messages %}
+            <script>
+              Swal.fire({
+                icon: '{{ message.tags|default:"info" }}',
+                title: '{{ message.tags|default:"Info"|title }}',
+                text: '{{ message }}',
+                confirmButtonColor: '#4361ee'
+              });
+            </script>
+          {% endfor %}
+        {% endif %}
 
-<script>
-  window.VOICE_WORDS = {{ voice_words|safe }};
-  window.ENROLL_VOICE_URL = "{% url 'accounts:enroll_voice_word' %}";
-</script>
-<script src="{% static 'accounts/js/face-capture.js' %}"></script>
-<script src="{% static 'accounts/js/voice-capture.js' %}"></script>
-<script>
-  // Show the relevant enrollment section based on which checkboxes are ticked
-  document.querySelectorAll('input[name="biometric_methods"]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      document.getElementById('face-enroll-section').style.display =
-        document.querySelector('input[value="face"]:checked') ? 'block' : 'none';
-      document.getElementById('voice-enroll-section').style.display =
-        document.querySelector('input[value="voice"]:checked') ? 'block' : 'none';
+        {% for field in form.visible_fields %}
+          {% if field.name != "biometric_methods" %}
+            <div class="form-group">
+              <label for="{{ field.id_for_label }}">
+                {% if field.name == 'username' %}<i class="fas fa-user"></i>{% endif %}
+                {% if field.name == 'email' %}<i class="fas fa-envelope"></i>{% endif %}
+                {% if field.name == 'password1' or field.name == 'password2' %}<i class="fas fa-lock"></i>{% endif %}
+                {{ field.label }}
+              </label>
+              <div class="input-icon">
+                {% if field.name == 'username' %}<i class="fas fa-user"></i>{% endif %}
+                {% if field.name == 'email' %}<i class="fas fa-envelope"></i>{% endif %}
+                {% if field.name == 'password1' or field.name == 'password2' %}<i class="fas fa-lock"></i>{% endif %}
+              </div>
+              {{ field }}
+              {% if field.help_text %}<small class="text-muted">{{ field.help_text }}</small>{% endif %}
+              {{ field.errors }}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <h2><i class="fas fa-fingerprint"></i> Méthodes biométriques</h2>
+
+        <div class="form-group">
+          <label>Sélectionnez vos méthodes d'authentification (optionnel) :</label>
+          <div class="checkboxes">
+            <div class="checkbox-card" data-method="face">
+              <label>
+                <input type="checkbox" name="biometric_methods" value="face">
+                <i class="fas fa-camera"></i> Reconnaissance faciale
+              </label>
+              <p class="text-muted">Utilisez votre caméra pour capturer votre visage</p>
+            </div>
+            <div class="checkbox-card" data-method="voice">
+              <label>
+                <input type="checkbox" name="biometric_methods" value="voice">
+                <i class="fas fa-microphone"></i> Reconnaissance vocale
+              </label>
+              <p class="text-muted">Enregistrez un échantillon de votre voix</p>
+            </div>
+          </div>
+        </div>
+
+        {{ form.camera_image }}
+        {{ form.voice_data }}
+
+        <div id="faceSection" class="biometric-section hidden">
+          <h3><i class="fas fa-camera"></i> Reconnaissance faciale</h3>
+          <p>Veuillez capturer une photo claire de votre visage</p>
+
+          <div class="media-group">
+            <button type="button" id="startCam" class="btn btn-primary">
+              <i class="fas fa-video"></i> Démarrer Webcam
+            </button>
+            <button type="button" id="takePhoto" class="btn btn-secondary hidden">
+              <i class="fas fa-camera"></i> Capturer
+            </button>
+          </div>
+
+          <video id="video" class="hidden" autoplay muted playsinline></video>
+          <img id="captured-preview" class="hidden" alt="Aperçu photo">
+
+          <div class="media-group hidden" id="retakeGroup">
+            <button type="button" id="retakePhoto" class="btn btn-outline">
+              <i class="fas fa-redo"></i> Reprendre
+            </button>
+          </div>
+
+          <div id="faceSuccess" class="success-message hidden">
+            <i class="fas fa-check-circle"></i> Visage capturé avec succès
+          </div>
+        </div>
+
+        <div id="voiceSection" class="biometric-section hidden">
+          <h3><i class="fas fa-microphone"></i> Reconnaissance vocale</h3>
+          <p>Prononcez à voix haute une phrase de votre choix pendant quelques secondes (ex. votre nom, une phrase courte).</p>
+
+          <div class="media-group">
+            <button type="button" id="startRec" class="btn btn-primary">
+              <i class="fas fa-microphone"></i> Enregistrer
+            </button>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-bar" id="recordingProgress"></div>
+          </div>
+
+          <audio id="audioPreview" class="hidden" controls></audio>
+
+          <div id="voiceSuccess" class="success-message hidden">
+            <i class="fas fa-check-circle"></i> Échantillon vocal enregistré
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem;">
+          <i class="fas fa-user-plus"></i> S'inscrire
+        </button>
+      </form>
+
+      <div class="login-link">
+        <p>Déjà un compte ? <a href="{% url 'accounts:login_step1' %}">Se connecter ici</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle sections avec animation
+    const sections = {
+      face: document.getElementById('faceSection'),
+      voice: document.getElementById('voiceSection'),
+    };
+
+    document.querySelectorAll('.checkbox-card').forEach(card => {
+      const checkbox = card.querySelector('input[type="checkbox"]');
+      const method = card.dataset.method;
+
+      card.addEventListener('click', () => {
+        checkbox.checked = !checkbox.checked;
+        card.classList.toggle('selected', checkbox.checked);
+        sections[method].classList.toggle('hidden', !checkbox.checked);
+      });
     });
-  });
-</script>
-{% endblock %}
+
+    // Capture Visage
+    let stream;
+    const video = document.getElementById('video'),
+          btnCam = document.getElementById('startCam'),
+          btnPhoto = document.getElementById('takePhoto'),
+          preview = document.getElementById('captured-preview'),
+          retakeG = document.getElementById('retakeGroup'),
+          btnRetake = document.getElementById('retakePhoto'),
+          camField = document.getElementById('id_camera_image'),
+          faceSuccess = document.getElementById('faceSuccess');
+
+    btnCam.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = stream;
+        video.classList.remove('hidden');
+        btnPhoto.classList.remove('hidden');
+        btnCam.disabled = true;
+        video.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch {
+        Swal.fire({
+          icon: 'error',
+          title: "Erreur d'accès",
+          text: "Impossible d'accéder à la webcam. Veuillez vérifier vos autorisations.",
+          confirmButtonColor: '#4361ee'
+        });
+      }
+    });
+
+    btnPhoto.addEventListener('click', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      camField.value = canvas.toDataURL('image/jpeg', 0.9);
+      preview.src = camField.value;
+      preview.classList.remove('hidden');
+      stream.getTracks().forEach(t => t.stop());
+      video.classList.add('hidden');
+      btnPhoto.classList.add('hidden');
+      retakeG.classList.remove('hidden');
+      faceSuccess.classList.remove('hidden');
+      retakeG.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    btnRetake.addEventListener('click', () => {
+      preview.classList.add('hidden');
+      retakeG.classList.add('hidden');
+      faceSuccess.classList.add('hidden');
+      camField.value = '';
+      btnCam.disabled = false;
+      btnCam.click();
+    });
+
+    // Enregistrement Voix — un seul échantillon, envoyé en base64 avec le formulaire principal
+    let recorder, chunks = [];
+    const btnRec = document.getElementById('startRec'),
+          audioPrev = document.getElementById('audioPreview'),
+          voiceField = document.getElementById('id_voice_data'),
+          progressBar = document.getElementById('recordingProgress'),
+          voiceSuccess = document.getElementById('voiceSuccess');
+
+    btnRec.addEventListener('click', async () => {
+      if (!recorder || recorder.state === 'inactive') {
+        chunks = [];
+        try {
+          const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+          recorder = new MediaRecorder(mic);
+          recorder.ondataavailable = e => chunks.push(e.data);
+
+          let startTime = Date.now();
+          const updateProgress = () => {
+            if (recorder.state === 'recording') {
+              const elapsed = Date.now() - startTime;
+              const duration = Math.min(100, (elapsed / 5000) * 100); // Max 5s
+              progressBar.style.width = `${duration}%`;
+              requestAnimationFrame(updateProgress);
+            }
+          };
+
+          recorder.onstart = () => {
+            progressBar.style.width = '0%';
+            startTime = Date.now();
+            updateProgress();
+            btnRec.innerHTML = '<i class="fas fa-stop"></i> Arrêter';
+            btnRec.classList.add('btn-danger');
+            btnRec.classList.remove('btn-primary');
+          };
+
+          recorder.onstop = () => {
+            progressBar.style.width = '0%';
+            mic.getTracks().forEach(t => t.stop());
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            audioPrev.src = URL.createObjectURL(blob);
+            audioPrev.classList.remove('hidden');
+            const fr = new FileReader();
+            fr.onloadend = () => {
+              voiceField.value = fr.result;
+              voiceSuccess.classList.remove('hidden');
+            };
+            fr.readAsDataURL(blob);
+            btnRec.innerHTML = '<i class="fas fa-microphone"></i> Enregistrer';
+            btnRec.classList.remove('btn-danger');
+            btnRec.classList.add('btn-primary');
+          };
+
+          recorder.start();
+          setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, 5000);
+        } catch {
+          Swal.fire({
+            icon: 'error',
+            title: 'Accès refusé',
+            text: 'Accès au microphone refusé. Veuillez vérifier vos autorisations.',
+            confirmButtonColor: '#4361ee'
+          });
+        }
+      } else {
+        recorder.stop();
+      }
+    });
+  </script>
+</body>
+</html>

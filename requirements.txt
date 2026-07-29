@@ -5,7 +5,7 @@ python-dotenv==1.0.1
 gunicorn==22.0.0
 
 # --- Database (Supabase = Postgres + pgvector, hosted, no local install needed) ---
-psycopg2-binary==2.9.9
+psycopg[binary]==3.1.19
 django-pgvector==0.1.0  # not required if you interact with vectors via SQL directly, kept optional
 
 # --- Face biometrics ---
