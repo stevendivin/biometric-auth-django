@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block content %}
+<h1><i class="fas fa-user-plus"></i> Création de compte</h1>
+<form method="post" id="signupForm">
+    {% csrf_token %}
+    
+    <!-- Erreurs générales -->
+    {% if form.non_field_errors %}
+        <div class="errorlist">
+            {% for error in form.non_field_errors %}
+                <p><i class="fas fa-exclamation-circle"></i> {{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Champs visibles -->
+    {% for field in form.visible_fields %}
+        {% if field.name != "biometric_methods" %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {{ field.errors }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <ul>
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li><strong>{{ field|capfirst }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+    <!-- Méthodes biométriques -->
+    <h2><i class="fas fa-fingerprint"></i> Méthodes biométriques</h2>
+    <div class="form-group">
+        <label>Sélectionnez vos méthodes (optionnel) :</label>
+        <div class="checkboxes">
+            <div class="checkbox-card" data-method="face">
+                <label>
+                    <input type="checkbox" name="biometric_methods" value="face">
+                    <i class="fas fa-camera"></i> Reconnaissance faciale
+                </label>
+            </div>
+            <div class="checkbox-card" data-method="voice">
+                <label>
+                    <input type="checkbox" name="biometric_methods" value="voice">
+                    <i class="fas fa-microphone"></i> Reconnaissance vocale
+                </label>
+            </div>
+        </div>
+        {{ form.biometric_methods.errors }}
+    </div>
+
+    <!-- Champs cachés -->
+    {{ form.camera_image }}
+    {{ form.voice_data }}
+
+    <!-- Section Face -->
+    <div id="faceSection" class="biometric-section hidden">
+        <h3><i class="fas fa-camera"></i> Capturer votre visage</h3>
+        {{ form.camera_image.errors }}
+        <div class="media-group">
+            <button type="button" id="startCam" class="btn btn-primary">
+                <i class="fas fa-video"></i> Démarrer Webcam
+            </button>
+            <button type="button" id="takePhoto" class="btn btn-secondary hidden">
+                <i class="fas fa-camera"></i> Capturer
+            </button>
+        </div>
+        <video id="video" class="hidden" autoplay muted playsinline></video>
+        <img id="captured-preview" class="hidden" alt="Aperçu">
+        <div id="retakeGroup" class="hidden">
+            <button type="button" id="retakePhoto" class="btn btn-outline">Reprendre</button>
+        </div>
+        <div id="faceSuccess" class="success-message hidden">
+            <i class="fas fa-check-circle"></i> Visage capturé
+        </div>
+    </div>
+
+    <!-- Section Voice -->
+    <div id="voiceSection" class="biometric-section hidden">
+        <h3><i class="fas fa-microphone"></i> Enregistrer votre voix</h3>
+        {{ form.voice_data.errors }}
+        <div class="media-group">
+            <button type="button" id="startRec" class="btn btn-primary">
+                <i class="fas fa-microphone"></i> Enregistrer
+            </button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="recordingProgress"></div>
+        </div>
+        <audio id="audioPreview" class="hidden" controls></audio>
+        <div id="voiceSuccess" class="success-message hidden">
+            <i class="fas fa-check-circle"></i> Enregistrement effectué
+        </div>
+    </div>
+
+    <button type="submit" class="btn" style="margin-top:1rem;">
+        <i class="fas fa-user-plus"></i> S'inscrire
+    </button>
+</form>
+
+<div class="login-link">
+    <p>Déjà un compte ? <a href="{% url 'accounts:login_step1' %}">Se connecter</a></p>
+</div>
+
+<script>
+    // (JavaScript identique à celui fourni précédemment pour la webcam et l'enregistrement)
+    // Je le réinclus brièvement :
+
+    // Basculer les sections
+    document.querySelectorAll('.checkbox-card').forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        const method = card.dataset.method;
+        const section = document.getElementById(method + 'Section');
+        if (checkbox) {
+            checkbox.addEventListener('change', () => {
+                section.classList.toggle('hidden', !checkbox.checked);
+            });
+        }
+        card.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'INPUT') {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+
+    // Webcam (fonctionnalités simplifiées, reprenez votre code complet)
+    let stream;
+    const video = document.getElementById('video');
+    const btnCam = document.getElementById('startCam');
+    const btnPhoto = document.getElementById('takePhoto');
+    const preview = document.getElementById('captured-preview');
+    const retakeG = document.getElementById('retakeGroup');
+    const camField = document.getElementById('id_camera_image');
+    const faceSuccess = document.getElementById('faceSuccess');
+
+    btnCam.addEventListener('click', async () => {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            video.classList.remove('hidden');
+            btnPhoto.classList.remove('hidden');
+            btnCam.disabled = true;
+        } catch {
+            alert('Webcam non accessible');
+        }
+    });
+
+    btnPhoto.addEventListener('click', () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        camField.value = canvas.toDataURL('image/jpeg', 0.9);
+        preview.src = camField.value;
+        preview.classList.remove('hidden');
+        stream.getTracks().forEach(t => t.stop());
+        video.classList.add('hidden');
+        btnPhoto.classList.add('hidden');
+        retakeG.classList.remove('hidden');
+        faceSuccess.classList.remove('hidden');
+    });
+
+    // Enregistrement vocal (simplifié)
+    let recorder, chunks = [];
+    const btnRec = document.getElementById('startRec');
+    const audioPrev = document.getElementById('audioPreview');
+    const voiceField = document.getElementById('id_voice_data');
+    const voiceSuccess = document.getElementById('voiceSuccess');
+
+    btnRec.addEventListener('click', async () => {
+        if (!recorder || recorder.state === 'inactive') {
+            chunks = [];
+            const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+            recorder = new MediaRecorder(mic);
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                audioPrev.src = URL.createObjectURL(blob);
+                audioPrev.classList.remove('hidden');
+                const reader = new FileReader();
+                reader.onload = () => {
+                    voiceField.value = reader.result;
+                    voiceSuccess.classList.remove('hidden');
+                };
+                reader.readAsDataURL(blob);
+                btnRec.textContent = 'Enregistrer';
+            };
+            recorder.start();
+            btnRec.textContent = 'Arrêter';
+            setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, 5000);
+        } else {
+            recorder.stop();
+        }
+    });
+
+    // Validation avant soumission
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+        const faceChecked = document.querySelector('input[name="biometric_methods"][value="face"]').checked;
+        if (faceChecked && !document.getElementById('id_camera_image').value) {
+            e.preventDefault();
+            alert('Capture faciale requise');
+        }
+        const voiceChecked = document.querySelector('input[name="biometric_methods"][value="voice"]').checked;
+        if (voiceChecked && !document.getElementById('id_voice_data').value) {
+            e.preventDefault();
+            alert('Enregistrement vocal requis');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Vérification vocale{% endblock %}
+
+{% block content %}
+<h1><i class="fas fa-microphone"></i> Vérification vocale</h1>
+<p>Prononcez la phrase secrète que vous avez enregistrée lors de l'inscription pour vérifier votre identité.</p>
+
+<form method="post" id="voiceVerifyForm">
+    {% csrf_token %}
+    
+    <!-- Champ caché pour les données audio encodées en base64 -->
+    <input type="hidden" name="voice_data" id="voice_data" value="">
+    
+    <div class="form-group">
+        <label>Enregistrez votre voix (5 secondes) :</label>
+        <div class="media-group">
+            <button type="button" id="startRec" class="btn btn-primary">
+                <i class="fas fa-microphone"></i> Démarrer l'enregistrement
+            </button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="recordingProgress" style="width:0%;"></div>
+        </div>
+        <audio id="audioPreview" class="hidden" controls></audio>
+        <div id="voiceSuccess" class="success-message hidden">
+            <i class="fas fa-check-circle"></i> Enregistrement effectué, vous pouvez vérifier.
+        </div>
+        <div id="voiceError" class="errorlist hidden">
+            <i class="fas fa-exclamation-circle"></i> <span id="voiceErrorMsg"></span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn" style="margin-top:1rem;">
+        <i class="fas fa-check"></i> Vérifier
+    </button>
+</form>
+
+<div style="margin-top:1rem;">
+    <a href="{% url 'accounts:login_step1' %}">Retour à la connexion</a>
+</div>
+
+<script>
+    // === Enregistrement vocal ===
+    let recorder, chunks = [];
+    const btnRec = document.getElementById('startRec');
+    const audioPrev = document.getElementById('audioPreview');
+    const voiceField = document.getElementById('voice_data');
+    const voiceSuccess = document.getElementById('voiceSuccess');
+    const voiceError = document.getElementById('voiceError');
+    const voiceErrorMsg = document.getElementById('voiceErrorMsg');
+    const progressBar = document.getElementById('recordingProgress');
+
+    btnRec.addEventListener('click', async () => {
+        if (!recorder || recorder.state === 'inactive') {
+            // Cacher les messages précédents
+            voiceSuccess.classList.add('hidden');
+            voiceError.classList.add('hidden');
+            voiceField.value = '';
+            chunks = [];
+
+            try {
+                const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recorder = new MediaRecorder(mic);
+                recorder.ondataavailable = e => chunks.push(e.data);
+
+                let startTime = Date.now();
+                const updateProgress = () => {
+                    if (recorder.state === 'recording') {
+                        const elapsed = (Date.now() - startTime) / 1000;
+                        const percent = Math.min(100, (elapsed / 5) * 100);
+                        progressBar.style.width = percent + '%';
+                        requestAnimationFrame(updateProgress);
+                    }
+                };
+
+                recorder.onstart = () => {
+                    progressBar.style.width = '0%';
+                    startTime = Date.now();
+                    updateProgress();
+                    btnRec.innerHTML = '<i class="fas fa-stop"></i> Arrêter';
+                    btnRec.classList.add('btn-danger');
+                    btnRec.classList.remove('btn-primary');
+                    // Désactiver le bouton de soumission pendant l'enregistrement
+                    document.querySelector('button[type="submit"]').disabled = true;
+                };
+
+                recorder.onstop = () => {
+                    progressBar.style.width = '0%';
+                    mic.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    audioPrev.src = URL.createObjectURL(blob);
+                    audioPrev.classList.remove('hidden');
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        voiceField.value = reader.result; // base64 complet avec préfixe
+                        voiceSuccess.classList.remove('hidden');
+                        document.querySelector('button[type="submit"]').disabled = false;
+                    };
+                    reader.readAsDataURL(blob);
+                    btnRec.innerHTML = '<i class="fas fa-microphone"></i> Démarrer l\'enregistrement';
+                    btnRec.classList.remove('btn-danger');
+                    btnRec.classList.add('btn-primary');
+                };
+
+                recorder.start();
+                // Arrêt automatique après 5 secondes
+                setTimeout(() => {
+                    if (recorder && recorder.state === 'recording') {
+                        recorder.stop();
+                    }
+                }, 5000);
+            } catch (err) {
+                voiceErrorMsg.textContent = 'Accès au microphone refusé. Veuillez autoriser l\'accès et réessayer.';
+                voiceError.classList.remove('hidden');
+                console.error(err);
+            }
+        } else {
+            recorder.stop();
+        }
+    });
+
+    // Validation du formulaire
+    document.getElementById('voiceVerifyForm').addEventListener('submit', function(e) {
+        if (!voiceField.value) {
+            e.preventDefault();
+            voiceErrorMsg.textContent = 'Vous devez enregistrer votre voix avant de vérifier.';
+            voiceError.classList.remove('hidden');
+        } else {
+            // Optionnel : afficher un spinner
+        }
+    });
+</script>
+
+<style>
+    /* Styles spécifiques (complément à base.css) */
+    .progress-container {
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 0.5rem 0 1rem 0;
+    }
+    .progress-bar {
+        height: 100%;
+        background: #4cc9f0;
+        width: 0%;
+        transition: width 0.2s;
+    }
+    .success-message {
+        background: rgba(76, 201, 240, 0.1);
+        border: 1px solid #4cc9f0;
+        border-radius: 8px;
+        padding: 0.8rem;
+        margin-top: 0.5rem;
+        color: #0a9396;
+    }
+    .errorlist {
+        color: #e63946;
+        margin-top: 0.5rem;
+    }
+    .hidden {
+        display: none !important;
+    }
+    .btn-danger {
+        background: #e63946;
+        color: white;
+    }
+    .btn-danger:hover {
+        background: #c1121f;
+    }
+</style>
+{% endblock %}

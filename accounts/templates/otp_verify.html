@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Vérification OTP{% endblock %}
+
+{% block content %}
+<h1><i class="fas fa-shield-alt"></i> Vérification OTP</h1>
+<p>Un code de vérification à 6 chiffres a été envoyé à votre adresse e-mail.</p>
+
+<form method="post" id="otpVerifyForm">
+    {% csrf_token %}
+    
+    <div class="form-group">
+        <label for="otp_code">Code OTP :</label>
+        <input type="text" name="otp_code" id="otp_code" class="form-control" 
+               placeholder="Entrez le code reçu" maxlength="6" required autofocus>
+        <small>Le code est valable 5 minutes.</small>
+        <div id="otpError" class="errorlist hidden">
+            <i class="fas fa-exclamation-circle"></i> <span id="otpErrorMsg"></span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="margin-top:0.5rem;">
+        <i class="fas fa-check"></i> Vérifier
+    </button>
+</form>
+
+<div style="margin-top:1rem;">
+    <p><a href="#" id="resendOtp">Renvoyer le code</a></p>
+    <a href="{% url 'accounts:login_step1' %}">Retour à la connexion</a>
+</div>
+
+<script>
+    document.getElementById('otpVerifyForm').addEventListener('submit', function(e) {
+        const code = document.getElementById('otp_code').value.trim();
+        if (!/^\d{6}$/.test(code)) {
+            e.preventDefault();
+            document.getElementById('otpErrorMsg').textContent = 'Le code doit comporter exactement 6 chiffres.';
+            document.getElementById('otpError').classList.remove('hidden');
+        } else {
+            document.getElementById('otpError').classList.add('hidden');
+        }
+    });
+
+    // Renvoyer le code OTP (AJAX ou redirection)
+    document.getElementById('resendOtp').addEventListener('click', function(e) {
+        e.preventDefault();
+        // Option 1 : rediriger vers une vue qui renvoie un nouvel OTP
+        window.location.href = "{% url 'accounts:resend_otp' %}";
+        // Ou bien faire une requête AJAX pour ne pas recharger la page
+    });
+</script>
+
+<style>
+    .form-control {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        text-align: center;
+        letter-spacing: 0.5rem;
+        background: #f8f9fa;
+    }
+    .form-control:focus {
+        border-color: #007bff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+    }
+    .errorlist {
+        color: #e63946;
+        margin-top: 0.5rem;
+    }
+    .hidden {
+        display: none !important;
+    }
+    #resendOtp {
+        color: #007bff;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    #resendOtp:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
