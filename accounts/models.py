@@ -10,6 +10,9 @@ from django.utils import timezone
 
 class CustomUser(AbstractUser):
     # Champs biométriques
+    face_enrolled = models.BooleanField(default=False)
+    voice_enrolled = models.BooleanField(default=False)
+
     biometric_methods = models.JSONField(default=list, blank=True)  # Stocke les méthodes sélectionnées
     face_enrolled_at = models.DateTimeField(null=True, blank=True)
     voice_enrolled_at = models.DateTimeField(null=True, blank=True)
